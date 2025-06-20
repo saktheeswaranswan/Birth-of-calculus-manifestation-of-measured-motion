@@ -1,0 +1,118 @@
+let startX = 50;
+let targetX = 550;
+let arrowX;
+let steps = [];
+let stepIndex = 0;
+let pause = 30;
+let totalDistance = 0;
+let running = true;
+
+function setup() {
+  createCanvas(800, 400);
+  arrowX = startX;
+
+  // Precompute Zeno steps (half remaining distance)
+  let pos = startX;
+  while (pos < targetX - 0.00001) {
+    pos += (targetX - pos) / 2;
+    steps.push(pos);
+  }
+}
+
+function draw() {
+  background(255);
+  textSize(14);
+  textAlign(CENTER);
+
+  // Dynamic zoom based on how close the arrow is
+  let zoom = map(arrowX, startX, targetX, 1, 3);
+  push();
+  translate(-arrowX * (zoom - 1), 0);
+  scale(zoom, 1);
+
+  // Draw Zeno
+  drawZeno(startX - 30, height / 2);
+
+  // Base line from start to target
+  stroke(0);
+  line(startX, height / 2 + 50, targetX, height / 2 + 50);
+
+  // Mark start and end
+  fill(0);
+  text("0 m", startX, height / 2 + 70);
+  text("1 m", targetX, height / 2 + 70);
+
+  // Draw target (YOU)
+  fill(0, 255, 0);
+  ellipse(targetX, height / 2, 25, 25);
+  fill(0);
+  text("YOU", targetX, height / 2 + 35);
+
+  // Show division marks
+  fill(100);
+  for (let i = 0; i < steps.length; i++) {
+    let x = steps[i];
+    stroke(200, 0, 200);
+    line(x, height / 2 + 45, x, height / 2 + 55);
+    noStroke();
+    if (i < 12) {
+      let fracDist = ((x - startX) / (targetX - startX)).toFixed(5);
+      text(`${fracDist} m`, x, height / 2 + 90);
+    }
+  }
+
+  // Draw arrow
+  drawArrow(arrowX, height / 2);
+
+  pop(); // end zoom
+
+  // Animate arrow approaching the target
+  if (running && frameCount % pause === 0 && stepIndex < steps.length - 1) {
+    let prev = arrowX;
+    arrowX = steps[stepIndex];
+    totalDistance += abs(arrowX - prev);
+    stepIndex++;
+  }
+
+  // Show running total of distance travelled
+  fill(0);
+  textAlign(LEFT);
+  textSize(16);
+  text(`Total Distance Travelled ≈ ${nf(totalDistance / (targetX - startX), 1, 10)} m`, 20, 30);
+  text(`Infinite Steps → Finite Distance`, 20, 55);
+  text(`Zeno's Paradox: Arrow Appears Closer but Never Reaches`, 20, 80);
+  text(`Press any key to pause`, 20, 105);
+}
+
+// Draw the arrow as a triangle (vector)
+function drawArrow(x, y) {
+  fill(255, 0, 0);
+  noStroke();
+  push();
+  translate(x, y);
+  triangle(-10, -7, -10, 7, 10, 0);
+  pop();
+  fill(0);
+  textAlign(CENTER);
+  text("ARROW", x, y - 20);
+}
+
+// Draw Zeno as a stick figure
+function drawZeno(x, y) {
+  stroke(0);
+  line(x, y - 30, x, y);           // body
+  line(x, y - 30, x - 10, y - 50); // left arm
+  line(x, y - 30, x + 10, y - 50); // right arm
+  line(x, y, x - 10, y + 20);      // left leg
+  line(x, y, x + 10, y + 20);      // right leg
+  fill(0);
+  ellipse(x, y - 40, 15, 15);      // head
+  noStroke();
+  textAlign(CENTER);
+  text("ZENO", x, y + 40);
+}
+
+// Press any key to pause or resume the simulation
+function keyPressed() {
+  running = !running;
+}
